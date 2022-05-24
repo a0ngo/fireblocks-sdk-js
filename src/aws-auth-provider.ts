@@ -1,0 +1,64 @@
+import { IAuthProvider } from "./iauth-provider";
+import { KMSClient, SignCommand, SignCommandInput, SigningAlgorithmSpec } from "@aws-sdk/client-kms";
+import { Credentials } from "@aws-sdk/types";
+import crypto from "crypto";
+import { v4 as uuid } from "uuid";
+
+
+export class AWSAuthProvider implements IAuthProvider {
+
+    private kmsClient: KMSClient;
+
+    constructor(credentials: Credentials, region: string, private keyId: string, private apiKey: string) {
+        this.kmsClient = new KMSClient({ region: region, credentials: credentials, tls: true});
+    }
+
+    async signJwt(path: string, bodyJson?: any): Promise<string> {
+        // const cmd = new GetPublicKeyCommand({KeyId: this.keyId});
+        // const resp  = await this.kmsClient.send(cmd);
+        const body = {
+            uri: path,
+            nonce: uuid(),
+            iat: Math.floor(Date.now() / 1000),
+            exp: Math.floor(Date.now() / 1000) + 55,
+            sub: this.apiKey,
+            bodyHash: crypto.createHash("sha256").update(JSON.stringify(bodyJson || "")).digest().toString("hex")
+        };
+        const header = {
+            alg: "RS256",
+            typ: "JWT"
+        };
+
+        const payloadToSign = Buffer.from(JSON.stringify(header)).toString("base64url") + "." + Buffer.from(JSON.stringify(body)).toString("base64url");
+
+
+        console.log(payloadToSign);
+
+        // if (JSON.stringify(msgToSign).length > 4095) {
+        //     console.error("Token for sign is longer than 4096 bytes.");
+        //     return undefined;
+        // }
+
+        const signCmdInput: SignCommandInput = {
+            KeyId: this.keyId,
+            Message: Uint8Array.from(Buffer.from(payloadToSign)),
+            SigningAlgorithm: SigningAlgorithmSpec.RSASSA_PKCS1_V1_5_SHA_256
+        };
+
+        const signCmd = new SignCommand(signCmdInput);
+        const res = await this.kmsClient.send(signCmd);
+        console.log();
+        return new Promise((resolve, reject) => {
+            if (res && res.Signature) {
+                resolve(Buffer.from(JSON.stringify(header)).toString("base64url") + "." + Buffer.from(JSON.stringify(body)).toString("base64url") + "." + Buffer.from(res.Signature).toString("base64url"));
+                console.log(Buffer.from(JSON.stringify(header)).toString("base64url") + "." + Buffer.from(JSON.stringify(body)).toString("base64url") + "." + Buffer.from(res.Signature).toString("base64url"));
+            } else {
+                reject("No signature.");
+            }
+        });
+    }
+
+    getApiKey(): string {
+        return this.apiKey;
+    }
+}

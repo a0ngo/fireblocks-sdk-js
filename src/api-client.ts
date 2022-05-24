@@ -12,7 +12,7 @@ export class ApiClient {
     }
 
     public async issueGetRequest(path: string, pageMode: boolean = false) {
-        const token = this.authProvider.signJwt(path);
+        const token = await this.authProvider.signJwt(path);
         const res = await this.axiosInstance.get(path, {
             headers: {
                 "X-API-Key": this.authProvider.getApiKey(),
@@ -35,7 +35,7 @@ export class ApiClient {
     }
 
     public async issuePostRequest(path: string, body: any, requestOptions?: RequestOptions) {
-        const token = this.authProvider.signJwt(path, body);
+        const token = await this.authProvider.signJwt(path, body);
 
         const idempotencyKey = requestOptions?.idempotencyKey;
         const headers: any = {
@@ -54,7 +54,7 @@ export class ApiClient {
     }
 
     public async issuePutRequest(path: string, body: any) {
-        const token = this.authProvider.signJwt(path, body);
+        const token = await this.authProvider.signJwt(path, body);
 
         return (await this.axiosInstance.put(path, body, {
             headers: {
@@ -66,7 +66,7 @@ export class ApiClient {
     }
 
     public async issueDeleteRequest(path: string) {
-        const token = this.authProvider.signJwt(path);
+        const token = await this.authProvider.signJwt(path);
 
         return (await this.axiosInstance.delete(path, {
             headers: {
