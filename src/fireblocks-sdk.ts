@@ -61,27 +61,16 @@ export interface SDKOptions {
 
 export class FireblocksSDK {
     private authProvider: IAuthProvider;
-    private apiBaseUrl: string;
+    private readonly apiBaseUrl: string = "https://api.fireblocks.io";
     private apiClient: ApiClient;
 
     /**
      * Creates a new Fireblocks API Client
-     * @param apiBaseUrl The fireblocks server URL. Leave empty to use the default server
      * @param authProvider The authentication provider for signing the API requests.
-     * @param credentials - The AWS credentials to be used for authentication with the AWS API
-     * @param region - The AWS region to connect to.
-     * @param keyId - The keyId to use from the KMS, can be the Key's UUID or 'alias/<KEY NAME>'.
-     * @param apiKey - The fireblocks API Key.
      * @param sdkOptions - The SDK options to control timeout.
      */
-    constructor(authProvider: IAuthProvider, apiBaseUrl: string = "https://api.fireblocks.io", sdkOptions?: SDKOptions,
-            credentials?: Credentials, region?: string, keyId?: string, private apiKey?: string) {
-        this.authProvider = authProvider ?? new AWSAuthProvider(credentials, region, keyId, apiBaseUrl);
-
-        if (apiBaseUrl) {
-            this.apiBaseUrl = apiBaseUrl;
-        }
-
+    constructor(authProvider: IAuthProvider, sdkOptions?: SDKOptions) {
+        this.authProvider = authProvider ?? new AWSAuthProvider();
         this.apiClient = new ApiClient(this.authProvider, this.apiBaseUrl, {timeoutInMs: sdkOptions?.timeoutInMs});
     }
 

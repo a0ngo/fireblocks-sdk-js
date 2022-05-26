@@ -3,14 +3,20 @@ import { KMSClient, SignCommand, SignCommandInput, SigningAlgorithmSpec } from "
 import { Credentials } from "@aws-sdk/types";
 import crypto from "crypto";
 import { v4 as uuid } from "uuid";
+import * as dotenv from "dotenv";
 
 
 export class AWSAuthProvider implements IAuthProvider {
 
     private kmsClient: KMSClient;
+    private apiKey: string;
+    private awsKeyId: string;
 
-    constructor(credentials: Credentials, region: string, private keyId: string, private apiKey: string) {
-        this.kmsClient = new KMSClient({ region: region, credentials: credentials, tls: true});
+    constructor() {
+        dotenv.config();
+        this.kmsClient = new KMSClient({credentials: {accessKeyId: process.env.awsAccessKey, secretAccessKey: process.env.awsSecretKey}, region: process.env.awsRegion, tls: true});
+        this.apiKey = process.env.fbksApiKey;
+        this.awsKeyId = process.env.awsKeyId;
     }
 
     async signJwt(path: string, bodyJson?: any): Promise<string> {
@@ -30,7 +36,7 @@ export class AWSAuthProvider implements IAuthProvider {
         const payloadToSign = Buffer.from(JSON.stringify(header)).toString("base64url") + "." + Buffer.from(JSON.stringify(body)).toString("base64url");
 
         const signCmdInput: SignCommandInput = {
-            KeyId: this.keyId,
+            KeyId: this.awsKeyId,
             Message: Uint8Array.from(Buffer.from(payloadToSign)),
             SigningAlgorithm: SigningAlgorithmSpec.RSASSA_PKCS1_V1_5_SHA_256
         };

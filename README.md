@@ -21,9 +21,14 @@ npm install --save <PATH/TO/>fireblocks-sdk
 ```
 
 #### Importing Fireblocks SDK
-This fork contains two approaches to create an AWS Auth Provider:
-- Using a preconfigured Auth Provider.
-- Supplying information to build an auth provider.
+Prior to running the code make sure to create a .env file in the locaiton from which your API script is running with the following structure:
+```
+awsAccessKey=/* AWS Access Key */
+awsSecretKey=/* AWS Secret Key */
+awsRegion=/* AWS Region */
+awsKeyId=/* AWS Key Id from KMS */
+fbksApiKey=/* Fireblocks API Key */
+```
 
 JavaScript:
 ```
@@ -31,24 +36,12 @@ const FireblocksSDK = require('fireblocks-sdk').FireblocksSDK;
 const AWSAuthProvider = require('fireblocks-sdk').AWSAuthProvider;
 const Credentials = require('aws-sdk').Credentials;
 
-// Needed values
-const apiKey = ....;
-const awsCreds = new Credentials(/* Access Key Id */, /* Secret Access Key */);
-const awsRegion = 'eu-west-1';
-const awsKeyId = ....;
-
 // Instantiate SDK using provider only.
-let awsProvider = new AWSAuthProvider(awsCreds, awsRegion, awsKeyId, apiKey);
+let awsProvider = new AWSAuthProvider();
 let fireblocks = new FireblocksSDK(awsProvider);
 
 // Instantiate SDK using provider with custom timeout
-let fireblocks = new FireblocksSDK(awsProvider, "https://api.fireblocks.io", {timeoutInMs:4000});
-
-// Instantiate SDK using information instead of provider only.
-let fireblocks = new FireblocksSDK(undefined, "https://api.fireblocks.io", undefined, awsCreds, awsRegion, awsKeyId, apiKey);
-
-// Instantiate SDK using information instead of provider only with custom timeout.
-let fireblocks = new FireblocksSDK(undefined, "https://api.fireblocks.io", {timeoutInMs:4000}, awsCreds, awsRegion, awsKeyId, apiKey);
+let fireblocks = new FireblocksSDK(awsProvider, {timeoutInMs:4000});
 ```
 
 TypeScript:
@@ -56,23 +49,11 @@ TypeScript:
 import { AWSAuthProvider, FireblocksSDK } from "fireblocks-sdk";
 import { Credentials } from "aws-sdk";
 
-// Needed values
-const apiKey = ....;
-const awsCreds = new Credentials(/* Access Key Id */, /* Secret Access Key */);
-const awsRegion = 'eu-west-1';
-const awsKeyId = ....;
-
 // Instantiate SDK using provider only.
-let awsProvider = new AWSAuthProvider(awsCreds, awsRegion, awsKeyId, apiKey);
+let awsProvider = new AWSAuthProvider();
 let fireblocks = new FireblocksSDK(awsProvider);
 
 // Instantiate SDK using provider with custom timeout
-let fireblocks = new FireblocksSDK(awsProvider, "https://api.fireblocks.io", {timeoutInMs:4000});
-
-// Instantiate SDK using information instead of provider only.
-let fireblocks = new FireblocksSDK(undefined, "https://api.fireblocks.io", undefined, awsCreds, awsRegion, awsKeyId, apiKey);
-
-// Instantiate SDK using information instead of provider only with custom timeout.
-let fireblocks = new FireblocksSDK(undefined, "https://api.fireblocks.io", {timeoutInMs:4000}, awsCreds, awsRegion, awsKeyId, apiKey);
+let fireblocks = new FireblocksSDK(awsProvider, {timeoutInMs:4000});
 
 ```

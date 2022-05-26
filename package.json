@@ -15,8 +15,10 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@aws-sdk/client-kms": "^3.95.0",
+    "@aws-sdk/client-kms": "^3.99.0",
+    "@aws-sdk/types": "^3.78.0",
     "axios": "^0.24.0",
+    "dotenv": "^16.0.1",
     "jsonwebtoken": "8.5.1",
     "query-string": "6.13.1",
     "uuid": "^8.3.2"
