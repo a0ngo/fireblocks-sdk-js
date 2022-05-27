@@ -1,7 +1,8 @@
 import { ApiClient } from "./api-client";
-import { ApiTokenProvider } from "./api-token-provider";
+import { AWSAuthProvider } from "./aws-auth-provider";
 import { IAuthProvider } from "./iauth-provider";
 import queryString from "query-string";
+import { Credentials } from "@aws-sdk/types";
 import {
     AllocateFundsRequest,
     AssetResponse,
@@ -52,30 +53,24 @@ import {
 
 export * from "./types";
 
+export * from "./aws-auth-provider";
+
 export interface SDKOptions {
     timeoutInMs: number;
 }
 
 export class FireblocksSDK {
     private authProvider: IAuthProvider;
-    private apiBaseUrl: string;
+    private readonly apiBaseUrl: string = "https://api.fireblocks.io";
     private apiClient: ApiClient;
 
     /**
      * Creates a new Fireblocks API Client
-     * @param privateKey A string representation of your private key
-     * @param apiKey Your api key. This is a uuid you received from Fireblocks
-     * @param apiBaseUrl The fireblocks server URL. Leave empty to use the default server
-     * @param authProvider
-     * @param sdkOptions
+     * @param authProvider The authentication provider for signing the API requests.
+     * @param sdkOptions - The SDK options to control timeout.
      */
-    constructor(privateKey: string, apiKey: string, apiBaseUrl: string = "https://api.fireblocks.io", authProvider: IAuthProvider = undefined, sdkOptions?: SDKOptions) {
-        this.authProvider = authProvider ?? new ApiTokenProvider(privateKey, apiKey);
-
-        if (apiBaseUrl) {
-            this.apiBaseUrl = apiBaseUrl;
-        }
-
+    constructor(authProvider: IAuthProvider, sdkOptions?: SDKOptions) {
+        this.authProvider = authProvider ?? new AWSAuthProvider();
         this.apiClient = new ApiClient(this.authProvider, this.apiBaseUrl, {timeoutInMs: sdkOptions?.timeoutInMs});
     }
 
@@ -413,30 +408,6 @@ export class FireblocksSDK {
     }
 
     /**
-     * Gets all contract wallets for your tenant
-     */
-    public async getContractWallets(): Promise<WalletContainerResponse<ExternalWalletAsset>[]> {
-        return await this.apiClient.issueGetRequest("/v1/contracts");
-    }
-
-    /**
-     * Gets a single contract wallet
-     * @param walletId The contract wallet ID
-     */
-    public async getContractWallet(walletId: string): Promise<WalletContainerResponse<ExternalWalletAsset>> {
-        return await this.apiClient.issueGetRequest(`/v1/contracts/${walletId}`);
-    }
-
-    /**
-     * Gets a single contract wallet asset
-     * @param walletId The contract wallet ID
-     * @param assetId The asset ID
-     */
-    public async getContractWalletAsset(walletId: string, assetId: string): Promise<ExternalWalletAsset> {
-        return await this.apiClient.issueGetRequest(`/v1/contracts/${walletId}/${assetId}`);
-    }
-
-    /**
      * Gets detailed information for a single transaction
      * @param txId The transaction id to query
      */
@@ -566,18 +537,6 @@ export class FireblocksSDK {
     }
 
     /**
-     * Creates a new contract wallet
-     * @param name A name for the new contract wallet
-     */
-     public async createContractWallet(name: string, requestOptions?: RequestOptions): Promise<WalletContainerResponse<ExternalWalletAsset>> {
-        const body = {
-            name,
-        };
-
-        return await this.apiClient.issuePostRequest("/v1/contracts", body, requestOptions);
-    }
-
-    /**
      * Creates a new asset within an exiting external wallet
      * @param walletId The wallet id
      * @param assetId The asset to add
@@ -605,23 +564,6 @@ export class FireblocksSDK {
      */
     public async createInternalWalletAsset(walletId: string, assetId: string, address: string, tag?: string, requestOptions?: RequestOptions): Promise<InternalWalletAsset> {
         const path = `/v1/internal_wallets/${walletId}/${assetId}`;
-
-        const body = {
-            address: address,
-            tag: tag
-        };
-        return await this.apiClient.issuePostRequest(path, body, requestOptions);
-    }
-
-    /**
-     * Creates a new asset within an exiting contract wallet
-     * @param walletId The wallet id
-     * @param assetId The asset to add
-     * @param address The wallet address
-     * @param tag (for ripple only) The ripple account tag
-     */
-     public async createContractWalletAsset(walletId: string, assetId: string, address: string, tag?: string, requestOptions?: RequestOptions): Promise<ExternalWalletAsset> {
-        const path = `/v1/contracts/${walletId}/${assetId}`;
 
         const body = {
             address: address,
@@ -735,23 +677,6 @@ export class FireblocksSDK {
      */
     public async deleteExternalWalletAsset(walletId: string, assetId: string): Promise<OperationSuccessResponse> {
         return await this.apiClient.issueDeleteRequest(`/v1/external_wallets/${walletId}/${assetId}`);
-    }
-
-    /**
-     * Deletes a single contract wallet
-     * @param walletId The contract wallet ID
-     */
-     public async deleteContractWallet(walletId: string): Promise<OperationSuccessResponse> {
-        return await this.apiClient.issueDeleteRequest(`/v1/contracts/${walletId}`);
-    }
-
-    /**
-     * Deletes a single contract wallet asset
-     * @param walletId The contract wallet ID
-     * @param assetId The asset ID
-     */
-    public async deleteContractWalletAsset(walletId: string, assetId: string): Promise<OperationSuccessResponse> {
-        return await this.apiClient.issueDeleteRequest(`/v1/contracts/${walletId}/${assetId}`);
     }
 
     /**
